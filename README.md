@@ -13,8 +13,9 @@
 - Implementation of TCP server
 - Implementation of TCP client
 - Implementation of UDP datagrams sender/receiver
-- Really robust, very fast and convenient
-- Easy to use
+- TCP client can event after a specified size of data or a text line received
+- The reasons of TCP client closures are returned
+- Really robust, very fast and easy to use
 
 ### *XAsyncSockets* classes :
 
