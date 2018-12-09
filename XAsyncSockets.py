@@ -491,6 +491,7 @@ class XAsyncTCPClient(XAsyncSocket) :
             self._rdBufView = self._rdBufView[n:]
             if n > 0 :
                 if not self._sizeToRead or not self._rdBufView :
+                    self._rdBufView = None
                     self._asyncSocketsPool.NotifyNextReadyForReading(self, False)
                     self._removeExpireTimeout()
                     if self._onDataRecv :
@@ -541,6 +542,8 @@ class XAsyncTCPClient(XAsyncSocket) :
     # ------------------------------------------------------------------------
 
     def AsyncRecvLine(self, timeoutSec=None) :
+        if self._rdLinePos is not None or self._rdBufView :
+            raise XAsyncTCPClientException('AsyncRecvLine : Already waiting asynchronous receive.')
         if self._socket :
             self._setExpireTimeout(timeoutSec)
             self._rdLinePos = 0
@@ -551,6 +554,8 @@ class XAsyncTCPClient(XAsyncSocket) :
     # ------------------------------------------------------------------------
 
     def AsyncRecvData(self, size=None, timeoutSec=None) :
+        if self._rdLinePos is not None or self._rdBufView :
+            raise XAsyncTCPClientException('AsyncRecvData : Already waiting asynchronous receive.')
         if self._socket :
             if size :
                 try :
