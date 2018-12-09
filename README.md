@@ -8,12 +8,12 @@
 #### XAsyncSockets features :
 - Managed asynchronous sockets (in pool)
 - Works directly with I/O
-- Support for a very large number of simultaneous connections
-- Support for concurrent processing (threaded)
+- Supports very large number of simultaneous pending connections
+- Supports concurrent synchronous processing operations if necessary (threaded)
 - Implementation of TCP server
 - Implementation of TCP client
 - Implementation of UDP datagrams sender/receiver
-- Really robust and very fast
+- Really robust, very fast and convenient
 - Easy to use
 
 ### *XAsyncSockets* classes :
