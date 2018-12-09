@@ -1,7 +1,12 @@
+"""
+The MIT License (MIT)
+Copyright © 2018 Jean-Christophe Bos & HC² (www.hc2.fr)
+"""
 
-from   select   import select
-from   time     import perf_counter, sleep
+
 from   _thread  import allocate_lock, start_new_thread
+from   time     import perf_counter, sleep
+from   select   import select
 from   queue    import Queue
 import socket
 

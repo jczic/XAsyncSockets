@@ -1,6 +1,6 @@
 import XAsyncSockets
 
-def _onUDPDatagramRecv(XAsyncUDPDatagram, remoteAddr, datagram) :
+def _onUDPDatagramRecv(xAsyncUDPDatagram, remoteAddr, datagram) :
     print('On UDP Datagram Recv (%s:%s) :' % remoteAddr)
     print(datagram.tobytes())
 
