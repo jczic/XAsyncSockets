@@ -67,7 +67,7 @@
 | Close | None |
 
 | Property | Details |
-| - | - | - |
+| - | - |
 | OnClosed | Get or set an event of type f(closedReason) |
 | State | Get or set object |
 
@@ -78,7 +78,7 @@
 | Create (static) | `asyncSocketsPool`, `srvAddr` (tuple of ip and port), `srvBacklog=256` (int), `recvBufSlots=None` |
 
 | Property | Details |
-| - | - | - |
+| - | - |
 | SrvAddr | Tuple of ip and port |
 | OnClientAccepted | Get or set an event of type f(xAsyncTCPServer, xAsyncTCPClient) |
 
@@ -92,7 +92,7 @@
 | AsyncSendData | `data` (bytes or buffer protocol) |
 
 | Property | Details |
-| - | - | - |
+| - | - |
 | SrvAddr | Tuple of ip and port |
 | CliAddr | Tuple of ip and port |
 | OnFailsToConnect | Get or set an event of type f(xAsyncTCPClient) |
@@ -109,7 +109,7 @@
 | AsyncSendDatagram | `datagram` (bytes or buffer protocol), `remoteAddr` (tuple of ip and port) |
 
 | Property | Details |
-| - | - | - |
+| - | - |
 | LocalAddr | Tuple of ip and port |
 | OnRecv | Get or set an event of type f(xAsyncUDPDatagram, remoteAddr, datagram) |
 | OnFailsToSend | Get or set an event of type f(xAsyncUDPDatagram, datagram, remoteAddr) |
@@ -122,7 +122,7 @@
 | Constructor | `size` (int), `keepAlloc=True`(bool) |
 
 | Property | Details |
-| - | - | - |
+| - | - |
 | Available | Get or set the availability of the slot |
 | Size | Get the buffer size of the slot |
 | Buffer | Get the buffer of the slot |
@@ -135,7 +135,7 @@
 | GetAvailableSlot | None |
 
 | Property | Details |
-| - | - | - |
+| - | - |
 | SlotsCount | Get the number of slots |
 | SlotsSize | Get the buffer size of each slots |
 | Slots | Get the list of slots |
