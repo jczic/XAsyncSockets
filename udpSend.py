@@ -5,7 +5,7 @@ def _onUDPDatagramFailsToSend(xAsyncUDPDatagram, datagram, remoteAddr) :
 
 def _onUDPDatagramOnCanSend(xAsyncUDPDatagram) :
     print("On UDP Datagram Can Send")
-    xAsyncUDPDatagram.AsyncSendDatagram(b'Hello Wolrd', ('localhost', 12345))
+    xAsyncUDPDatagram.AsyncSendDatagram(b'Hello Wolrd', ('127.0.0.1', 12345))
 
 xAsyncSocketsPool = XAsyncSockets.XAsyncSocketsPool()
 xAsyncUDPDatagram = XAsyncSockets.XAsyncUDPDatagram. \

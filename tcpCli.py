@@ -43,7 +43,7 @@ countRecv   = 0
 countClosed = 0
 
 pool    = XAsyncSocketsPool()
-srvAddr = ('localhost', 12345)
+srvAddr = ('127.0.0.1', 12345)
 
 for i in range(100) :
     cli = XAsyncTCPClient.Create(pool, srvAddr)

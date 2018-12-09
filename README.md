@@ -1,4 +1,4 @@
-## XAsyncSockets is a little but full Python library of managed asynchronous sockets.
+## XAsyncSockets is an efficient Python/MicroPython library of managed asynchronous sockets.
 
 ![HC²](hc2.png "HC²")
 
@@ -14,8 +14,10 @@
 - Implementation of TCP client
 - Implementation of UDP datagrams sender/receiver
 - TCP client can event after a specified size of data or a text line received
+- Each connections and receivings can pending during a specified time.
 - The reasons of TCP client closures are returned
 - Really robust, very fast and easy to use
+- Compatible with MicroPython implementation (sockets layer, FiFo queue, perf counter).
 
 ### *XAsyncSockets* classes :
 
@@ -29,6 +31,7 @@
 | XAsyncUDPDatagram | UDP sender/recever implementation of 'XAsyncSocket' |
 | XBufferSlot | Managed buffer |
 | XBufferSlots | Managed buffers collection |
+| XFiFo | Dedicated FiFo queue |
 
 ### *XAsyncSockets* exceptions :
 
@@ -39,6 +42,7 @@
 | XAsyncTCPServerException | Exception class for 'XAsyncTCPServer' |
 | XAsyncTCPClientException | Exception class for 'XAsyncTCPClient' |
 | XAsyncUDPDatagramException | Exception class for 'XAsyncUDPDatagram' |
+| XFiFoException | Exception class for 'XFiFo' |
 
 ### *XAsyncSocketsPool* class details :
 
@@ -140,6 +144,19 @@
 | SlotsCount | Get the number of slots |
 | SlotsSize | Get the buffer size of each slots |
 | Slots | Get the list of slots |
+
+### *XFiFo* class details :
+
+| Method | Arguments |
+| - | - |
+| Constructor | None |
+| Put | `obj` (object) |
+| Get | None |
+| Clear | None |
+
+| Property | Details |
+| - | - |
+| Empty | Return True if the FiFo is empty |
 
 ### By JC`zic for [HC²](https://www.hc2.fr) ;')
 
