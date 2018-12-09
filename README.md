@@ -1,4 +1,4 @@
-## XAsyncSockets is a little but full library of managed asynchronous sockets.
+## XAsyncSockets is a little but full Python library of managed asynchronous sockets.
 
 ![HC²](hc2.png "HC²")
 
