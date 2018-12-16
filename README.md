@@ -49,6 +49,8 @@
 | Method | Arguments |
 | - | - |
 | Constructor | None |
+| GetAllAsyncSockets | None |
+| GetAsyncSocketByID | `id` (int) |
 | AsyncWaitEvents | `threadsCount=0` (int) |
 | StopWaitEvents | None |
 
@@ -73,8 +75,9 @@
 
 | Property | Details |
 | - | - |
+| SocketID | Get the opened socket unique ID |
 | OnClosed | Get or set an event of type f(closedReason) |
-| State | Get or set object |
+| State | Get or set a custom object |
 
 ### *XAsyncTCPServer* class details :
 

@@ -156,6 +156,16 @@ class XAsyncSocketsPool :
 
     # ------------------------------------------------------------------------
 
+    def GetAllAsyncSockets(self) :
+        return list(self._asyncSockets.values())
+
+    # ------------------------------------------------------------------------
+
+    def GetAsyncSocketByID(self, id) :
+        return self._asyncSockets.get(id, None)
+
+    # ------------------------------------------------------------------------
+
     def NotifyNextReadyForReading(self, asyncSocket, notify) :
         try :
             socket = asyncSocket.GetSocketObj()
@@ -303,6 +313,10 @@ class XAsyncSocket :
         self._close()
 
     # ------------------------------------------------------------------------
+
+    @property
+    def SocketID(self) :
+        return self._socket.fileno() if self._socket else None
 
     @property
     def ExpireTimeSec(self) :
