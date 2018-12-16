@@ -516,8 +516,9 @@ class XAsyncTCPClient(XAsyncSocket) :
             try :
                 n = self._socket.recv_into(self._rdBufView)
             except ssl.SSLError as sslErr :
-                if sslErr.args[0] == ssl.SSL_ERROR_WANT_READ :
-                    return
+                if sslErr.args[0] != ssl.SSL_ERROR_WANT_READ :
+                    self._close()
+                return
             except :
                 self._close()
                 return
@@ -647,20 +648,21 @@ class XAsyncTCPClient(XAsyncSocket) :
                                                 do_handshake_on_connect = False )
             except Exception as ex :
                 raise XAsyncTCPClientException('StartSSL : %s' % ex)
-            while True :
+            count = 0
+            while count < 5 :
                 try :
                     self._socket.do_handshake()
-                    break
+                    return True
                 except ssl.SSLError as sslErr :
+                    count += 1
                     if sslErr.args[0] == ssl.SSL_ERROR_WANT_READ :
-                        select([self._socket], [], [])
+                        select([self._socket], [], [], 0.500)
                     elif sslErr.args[0] == ssl.SSL_ERROR_WANT_WRITE :
-                        select([], [self._socket], [])
+                        select([], [self._socket], [], 0.500)
                     else :
-                        raise XAsyncTCPClientException('StartSSL (handshake) : %s' % sslErr)
-                except Exception as ex :
-                    raise XAsyncTCPClientException('StartSSL (handshake) : %s' % ex)
-            return True
+                        break
+                except :
+                    break
         return False
 
     # ------------------------------------------------------------------------
