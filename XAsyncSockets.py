@@ -8,6 +8,7 @@ from   _thread  import allocate_lock, start_new_thread
 from   time     import sleep
 from   select   import select
 import socket
+import ssl
 
 try :
     from time import perf_counter
@@ -510,6 +511,9 @@ class XAsyncTCPClient(XAsyncSocket) :
             # In the context of reading data,
             try :
                 n = self._socket.recv_into(self._rdBufView)
+            except ssl.SSLError as sslErr :
+                if sslErr.args[0] == ssl.SSL_ERROR_WANT_READ :
+                    return
             except :
                 self._close()
                 return
@@ -617,6 +621,40 @@ class XAsyncTCPClient(XAsyncSocket) :
                 pass
             raise XAsyncTCPClientException('AsyncSendData : "data" is incorrect.')
         return False
+
+    # ------------------------------------------------------------------------
+
+    def StartSSL( self,
+                  keyfile     = None,
+                  certfile    = None,
+                  server_side = False,
+                  cert_reqs   = ssl.CERT_NONE,
+                  ca_certs    = None ) :
+        try :
+            self._asyncSocketsPool.NotifyNextReadyForWriting(self, False)
+            self._asyncSocketsPool.NotifyNextReadyForReading(self, False)
+            self._socket = ssl.wrap_socket( self._socket,
+                                            keyfile     = keyfile,
+                                            certfile    = certfile,
+                                            server_side = server_side,
+                                            cert_reqs   = cert_reqs,
+                                            ca_certs    = ca_certs,
+                                            do_handshake_on_connect = False )
+        except Exception as ex :
+            raise XAsyncTCPClientException('StartSSL : %s' % ex)
+        while True :
+            try :
+                self._socket.do_handshake()
+                break
+            except ssl.SSLError as sslErr :
+                if sslErr.args[0] == ssl.SSL_ERROR_WANT_READ :
+                    select([self._socket], [], [])
+                elif sslErr.args[0] == ssl.SSL_ERROR_WANT_WRITE :
+                    select([], [self._socket], [])
+                else :
+                    raise XAsyncTCPClientException('StartSSL (handshake) : %s' % sslErr)
+            except Exception as ex :
+                raise XAsyncTCPClientException('StartSSL (handshake) : %s' % ex)
 
     # ------------------------------------------------------------------------
 
