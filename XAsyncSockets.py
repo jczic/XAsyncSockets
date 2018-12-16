@@ -630,31 +630,34 @@ class XAsyncTCPClient(XAsyncSocket) :
                   server_side = False,
                   cert_reqs   = ssl.CERT_NONE,
                   ca_certs    = None ) :
-        try :
-            self._asyncSocketsPool.NotifyNextReadyForWriting(self, False)
-            self._asyncSocketsPool.NotifyNextReadyForReading(self, False)
-            self._socket = ssl.wrap_socket( self._socket,
-                                            keyfile     = keyfile,
-                                            certfile    = certfile,
-                                            server_side = server_side,
-                                            cert_reqs   = cert_reqs,
-                                            ca_certs    = ca_certs,
-                                            do_handshake_on_connect = False )
-        except Exception as ex :
-            raise XAsyncTCPClientException('StartSSL : %s' % ex)
-        while True :
+        if hasattr(ssl, 'SSLContext') :
             try :
-                self._socket.do_handshake()
-                break
-            except ssl.SSLError as sslErr :
-                if sslErr.args[0] == ssl.SSL_ERROR_WANT_READ :
-                    select([self._socket], [], [])
-                elif sslErr.args[0] == ssl.SSL_ERROR_WANT_WRITE :
-                    select([], [self._socket], [])
-                else :
-                    raise XAsyncTCPClientException('StartSSL (handshake) : %s' % sslErr)
+                self._asyncSocketsPool.NotifyNextReadyForWriting(self, False)
+                self._asyncSocketsPool.NotifyNextReadyForReading(self, False)
+                self._socket = ssl.wrap_socket( self._socket,
+                                                keyfile     = keyfile,
+                                                certfile    = certfile,
+                                                server_side = server_side,
+                                                cert_reqs   = cert_reqs,
+                                                ca_certs    = ca_certs,
+                                                do_handshake_on_connect = False )
             except Exception as ex :
-                raise XAsyncTCPClientException('StartSSL (handshake) : %s' % ex)
+                raise XAsyncTCPClientException('StartSSL : %s' % ex)
+            while True :
+                try :
+                    self._socket.do_handshake()
+                    break
+                except ssl.SSLError as sslErr :
+                    if sslErr.args[0] == ssl.SSL_ERROR_WANT_READ :
+                        select([self._socket], [], [])
+                    elif sslErr.args[0] == ssl.SSL_ERROR_WANT_WRITE :
+                        select([], [self._socket], [])
+                    else :
+                        raise XAsyncTCPClientException('StartSSL (handshake) : %s' % sslErr)
+                except Exception as ex :
+                    raise XAsyncTCPClientException('StartSSL (handshake) : %s' % ex)
+            return True
+        return False
 
     # ------------------------------------------------------------------------
 
