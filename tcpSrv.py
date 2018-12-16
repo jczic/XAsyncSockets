@@ -13,7 +13,7 @@ def _onTCPSrvClientAccepted(xAsyncTCPServer, xAsyncTCPClient) :
     xAsyncTCPClient.OnClosed         = _onTCPClientClosed
     xAsyncTCPClient.AsyncRecvData(timeoutSec=1)
 
-def _onTCPSrvClosed(xAsyncTCPServer) :
+def _onTCPSrvClosed(xAsyncTCPServer, closedReason) :
     print("On TCP Server Closed")
 
 def _onTCPClientFailsToConnect(xAsyncTCPClient) :

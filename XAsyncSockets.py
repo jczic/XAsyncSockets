@@ -52,28 +52,32 @@ class XAsyncSocketsPool :
     # ------------------------------------------------------------------------
 
     def _addSocket(self, socket, asyncSocket) :
-        socketno = socket.fileno()
-        self._opLock.acquire()
-        ok = (socketno not in self._asyncSockets)
-        if ok :
-            self._asyncSockets[socketno] = asyncSocket
-        self._opLock.release()
-        return ok
+        if socket :
+            socketno = socket.fileno()
+            self._opLock.acquire()
+            ok = (socketno not in self._asyncSockets)
+            if ok :
+                self._asyncSockets[socketno] = asyncSocket
+            self._opLock.release()
+            return ok
+        return False
 
     # ------------------------------------------------------------------------
 
     def _removeSocket(self, socket) :
-        socketno = socket.fileno()
-        self._opLock.acquire()
-        ok = (socketno in self._asyncSockets)
-        if ok :
-            del self._asyncSockets[socketno]
-            if socket in self._readList :
-                self._readList.remove(socket)
-            if socket in self._writeList :
-                self._writeList.remove(socket)
-        self._opLock.release()
-        return ok
+        if socket :
+            socketno = socket.fileno()
+            self._opLock.acquire()
+            ok = (socketno in self._asyncSockets)
+            if ok :
+                del self._asyncSockets[socketno]
+                if socket in self._readList :
+                    self._readList.remove(socket)
+                if socket in self._writeList :
+                    self._writeList.remove(socket)
+            self._opLock.release()
+            return ok
+        return False
 
     # ------------------------------------------------------------------------
 
