@@ -95,7 +95,8 @@
 | AsyncRecvLine | `timeoutSec=None` (int) |
 | AsyncRecvData | `size=None` (int), `timeoutSec=None` (int) |
 | AsyncSendData | `data` (bytes or buffer protocol) |
-| StartSSL | `keyfile=None`, `certfile=None`, `server_side=False`, `cert_reqs=ssl.CERT_NONE`, `ca_certs=None` |
+| StartSSL* | `keyfile=None`, `certfile=None`, `server_side=False`, `cert_reqs=ssl.CERT_NONE`, `ca_certs=None` |
+* StartSSL doesn't works on MycroPython (in asynchronous non-blocking sockets mode)
 
 | Property | Details |
 | - | - |
