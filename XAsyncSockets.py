@@ -483,6 +483,11 @@ class XAsyncTCPClient(XAsyncSocket) :
     # ------------------------------------------------------------------------
 
     def Close(self) :
+        if self._wrBufView :
+            try :
+                self._socket.send(self._wrBufView)
+            except :
+                pass
         try :
             self._socket.shutdown(socket.SHUT_RDWR)
         except :
