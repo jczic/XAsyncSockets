@@ -99,7 +99,8 @@
 | AsyncRecvData | `size=None` (int), `onDataRecv=None` (function), `onDataRecvArg=None`(object), `timeoutSec=None` (int) |
 | AsyncSendData | `data` (bytes or buffer protocol), `onDataSent=None` (function), `onDataSentArg=None` (object) |
 | StartSSL | `keyfile=None`, `certfile=None`, `server_side=False`, `cert_reqs=ssl.CERT_NONE`, `ca_certs=None` |
-- `onDataRecv` and `onDataSent` are callback events of type f(xAsyncTCPClient, arg)
+- `onDataRecv` is a callback event of type f(xAsyncTCPClient, data, arg)
+- `onDataSent` is a callback event of type f(xAsyncTCPClient, arg)
 - `StartSSL` doesn't works on MycroPython (in asynchronous non-blocking sockets mode)
 
 | Property | Details |
