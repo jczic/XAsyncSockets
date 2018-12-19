@@ -7,22 +7,17 @@ def _onTCPClientFailsToConnect(xAsyncTCPClient) :
 
 def _onTCPClientConnected(xAsyncTCPClient) :
     print("On TCP Client Connected")
-    xAsyncTCPClient.AsyncSendData(b'Hello World')
-    xAsyncTCPClient.AsyncRecvData()
+    xAsyncTCPClient.AsyncSendData( data          = b'Hello World',
+                                   onDataSent    = _onTCPClientDataSent,
+                                   onDataSentArg = 'test' )
+    xAsyncTCPClient.AsyncRecvData(onDataRecv=_onTCPClientDataRecv)
 
-def _onTCPClientLineRecv(xAsyncTCPClient, line) :
-    print("On TCP Client Line Recv : %s" % line)
-    xAsyncTCPClient.AsyncRecvLine()
+def _onTCPClientDataSent(xAsyncTCPClient, arg) :
+    print("On TCP Client Data Sent (%s)" % arg)
 
-def _onTCPClientDataRecv(xAsyncTCPClient, data) :
-    global countRecv
-    countRecv += 1
-    print( "%s) On TCP Client Data Recv (%s bytes) : %s" \
-           % (countRecv, len(data), data.tobytes()) )
-    xAsyncTCPClient.AsyncRecvData()
-
-def _onTCPClientCanSend(xAsyncTCPClient) :
-    print("On TCP Client Can Send")
+def _onTCPClientDataRecv(xAsyncTCPClient, data, arg) :
+    print("On TCP Client Data Recv (%s bytes) : %s" % (len(data), data.tobytes()))
+    xAsyncTCPClient.AsyncRecvData(onDataRecv=_onTCPClientDataRecv)
 
 def _onTCPClientClosed(xAsyncTCPClient, closedReason) :
     global countClosed
@@ -39,7 +34,6 @@ def _onTCPClientClosed(xAsyncTCPClient, closedReason) :
         reason = "???"
     print("%s) On TCP Client Closed (%s)" % (countClosed, reason))
 
-countRecv   = 0
 countClosed = 0
 
 pool    = XAsyncSocketsPool()
@@ -51,9 +45,6 @@ for i in range(100) :
         print("Client %s created" % (i+1))
         cli.OnFailsToConnect = _onTCPClientFailsToConnect
         cli.OnConnected      = _onTCPClientConnected
-        cli.OnLineRecv       = _onTCPClientLineRecv
-        cli.OnDataRecv       = _onTCPClientDataRecv
-        cli.OnCanSend        = _onTCPClientCanSend
         cli.OnClosed         = _onTCPClientClosed
     else :
         print("Error to create client %s..." % (i+1))

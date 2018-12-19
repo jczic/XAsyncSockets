@@ -398,7 +398,6 @@ class XAsyncTCPServer(XAsyncSocket) :
         except Exception as ex :
             asyncTCPCli._close()
             raise XAsyncTCPServerException('Error when handling the "OnClientAccepted" event : %s' % ex)
-        self._asyncSocketsPool.NotifyNextReadyForWriting(asyncTCPCli, True)
 
     # ------------------------------------------------------------------------
 
@@ -469,9 +468,10 @@ class XAsyncTCPClient(XAsyncSocket) :
             self._cliAddr          = cliAddr if cliAddr else ('0.0.0.0', 0)
             self._onFailsToConnect = None
             self._onConnected      = None
-            self._onLineRecv       = None
             self._onDataRecv       = None
-            self._onCanSend        = None
+            self._onDataRecvArg    = None
+            self._onDataSent       = None
+            self._onDataSentArg    = None
             self._sizeToRead       = None
             self._rdLinePos        = None
             self._rdBufView        = None
@@ -510,15 +510,16 @@ class XAsyncTCPClient(XAsyncSocket) :
                         self._rdLinePos = None
                         self._asyncSocketsPool.NotifyNextReadyForReading(self, False)
                         self._removeExpireTimeout()
-                        if self._onLineRecv :
+                        if self._onDataRecv :
+                            line = self._bufSlot.Buffer[:lineLen]
                             try :
-                                line = self._bufSlot.Buffer[:lineLen].decode()
+                                line = line.decode()
                             except :
-                                break
+                                pass
                             try :
-                                self._onLineRecv(self, line)
+                                self._onDataRecv(self, line, self._onDataRecvArg)
                             except Exception as ex :
-                                raise XAsyncTCPClientException('Error when handling the "OnLineRecv" event : %s' % ex)
+                                raise XAsyncTCPClientException('Error when handling the "OnDataRecv" event : %s' % ex)
                         break
                     elif b != b'\r' :
                         if self._rdLinePos < self._bufSlot.Size :
@@ -549,8 +550,9 @@ class XAsyncTCPClient(XAsyncSocket) :
                     self._removeExpireTimeout()
                     if self._onDataRecv :
                         size = self._sizeToRead if self._sizeToRead else n
+                        data = memoryview(self._bufSlot.Buffer)[:size]
                         try :
-                            self._onDataRecv(self, memoryview(self._bufSlot.Buffer)[:size])
+                            self._onDataRecv(self, data, self._onDataRecvArg)
                         except Exception as ex :
                             raise XAsyncTCPClientException('Error when handling the "OnDataRecv" event : %s' % ex)
             else :
@@ -586,28 +588,30 @@ class XAsyncTCPClient(XAsyncSocket) :
             self._wrBufView = self._wrBufView[n:]
             if self._wrBufView :
                 return
-        self._asyncSocketsPool.NotifyNextReadyForWriting(self, False)
-        if self._onCanSend :
-            try :
-                self._onCanSend(self)
-            except Exception as ex :
-                raise XAsyncTCPClientException('Error when handling the "OnCanSend" event : %s' % ex)
+            self._asyncSocketsPool.NotifyNextReadyForWriting(self, False)
+            if self._onDataSent :
+                try :
+                    self._onDataSent(self, self._onDataSentArg)
+                except Exception as ex :
+                    raise XAsyncTCPClientException('Error when handling the "OnDataSent" event : %s' % ex)
 
     # ------------------------------------------------------------------------
 
-    def AsyncRecvLine(self, timeoutSec=None) :
+    def AsyncRecvLine(self, onDataRecv=None, onDataRecvArg=None, timeoutSec=None) :
         if self._rdLinePos is not None or self._rdBufView :
             raise XAsyncTCPClientException('AsyncRecvLine : Already waiting asynchronous receive.')
         if self._socket :
             self._setExpireTimeout(timeoutSec)
-            self._rdLinePos = 0
+            self._rdLinePos     = 0
+            self._onDataRecv    = onDataRecv
+            self._onDataRecvArg = onDataRecvArg
             self._asyncSocketsPool.NotifyNextReadyForReading(self, True)
             return True
         return False
 
     # ------------------------------------------------------------------------
 
-    def AsyncRecvData(self, size=None, timeoutSec=None) :
+    def AsyncRecvData(self, size=None, onDataRecv=None, onDataRecvArg=None, timeoutSec=None) :
         if self._rdLinePos is not None or self._rdBufView :
             raise XAsyncTCPClientException('AsyncRecvData : Already waiting asynchronous receive.')
         if self._socket :
@@ -624,14 +628,16 @@ class XAsyncTCPClient(XAsyncSocket) :
             else :
                 self._sizeToRead = size
             self._setExpireTimeout(timeoutSec)
-            self._rdBufView = memoryview(self._bufSlot.Buffer)[:size]
+            self._rdBufView     = memoryview(self._bufSlot.Buffer)[:size]
+            self._onDataRecv    = onDataRecv
+            self._onDataRecvArg = onDataRecvArg
             self._asyncSocketsPool.NotifyNextReadyForReading(self, True)
             return True
         return False
 
     # ------------------------------------------------------------------------
 
-    def AsyncSendData(self, data) :
+    def AsyncSendData(self, data, onDataSent=None, onDataSentArg=None) :
         if self._socket :
             try :
                 if bytes([data[0]]) :
@@ -639,6 +645,8 @@ class XAsyncTCPClient(XAsyncSocket) :
                         self._wrBufView = memoryview(self._wrBufView.tobytes() + data)
                     else :
                         self._wrBufView = memoryview(data)
+                    self._onDataSent    = onDataSent
+                    self._onDataSentArg = onDataSentArg
                     self._asyncSocketsPool.NotifyNextReadyForWriting(self, True)
                     return True
             except :
@@ -708,27 +716,6 @@ class XAsyncTCPClient(XAsyncSocket) :
     def OnConnected(self, value) :
         self._onConnected = value
 
-    @property
-    def OnLineRecv(self) :
-        return self._onLineRecv
-    @OnLineRecv.setter
-    def OnLineRecv(self, value) :
-        self._onLineRecv = value
-
-    @property
-    def OnDataRecv(self) :
-        return self._onDataRecv
-    @OnDataRecv.setter
-    def OnDataRecv(self, value) :
-        self._onDataRecv = value
-
-    @property
-    def OnCanSend(self) :
-        return self._onCanSend
-    @OnCanSend.setter
-    def OnCanSend(self, value) :
-        self._onCanSend = value
-
 # ============================================================================
 # ===( XAsyncUDPDatagram )====================================================
 # ============================================================================
@@ -763,7 +750,6 @@ class XAsyncUDPDatagram(XAsyncSocket) :
         xAsyncUDPDatagram = XAsyncUDPDatagram(asyncSocketsPool, udpSocket, bufSlot)
         if openRecv :
             asyncSocketsPool.NotifyNextReadyForReading(xAsyncUDPDatagram, True)
-        asyncSocketsPool.NotifyNextReadyForWriting(xAsyncUDPDatagram, True)
         return xAsyncUDPDatagram
 
     # ------------------------------------------------------------------------
@@ -773,8 +759,9 @@ class XAsyncUDPDatagram(XAsyncSocket) :
             super().__init__(asyncSocketsPool, udpSocket, bufSlot)
             self._wrDgramFiFo   = XFiFo()
             self._onFailsToSend = None
-            self._onCanSend     = None
-            self._onRecv        = None
+            self._onDataSent    = None
+            self._onDataSentArg = None
+            self._onDataRecv    = None
         except :
             raise XAsyncUDPDatagramException('Error to creating XAsyncUDPDatagram, arguments are incorrects.')
 
@@ -793,11 +780,11 @@ class XAsyncUDPDatagram(XAsyncSocket) :
                     datagram        = memoryview(buf)
                 except :
                     return
-        if self._onRecv :
+        if self._onDataRecv :
             try :
-                self._onRecv(self, remoteAddr, datagram)
+                self._onDataRecv(self, remoteAddr, datagram)
             except Exception as ex :
-                raise XAsyncUDPDatagramException('Error when handling the "OnRecv" event : %s' % ex)
+                raise XAsyncUDPDatagramException('Error when handling the "OnDataRecv" event : %s' % ex)
 
 
     # ------------------------------------------------------------------------
@@ -818,19 +805,21 @@ class XAsyncUDPDatagram(XAsyncSocket) :
             if not self._wrDgramFiFo.Empty :
                 return
         self._asyncSocketsPool.NotifyNextReadyForWriting(self, False)
-        if self._onCanSend :
+        if self._onDataSent :
             try :
-                self._onCanSend(self)
+                self._onDataSent(self, self._onDataSentArg)
             except Exception as ex :
-                raise XAsyncUDPDatagramException('Error when handling the "OnCanSend" event : %s' % ex)
+                raise XAsyncUDPDatagramException('Error when handling the "OnDataSent" event : %s' % ex)
 
     # ------------------------------------------------------------------------
 
-    def AsyncSendDatagram(self, datagram, remoteAddr) :
+    def AsyncSendDatagram(self, datagram, remoteAddr, onDataSent=None, onDataSentArg=None) :
         if self._socket :
             try :
                 if bytes([datagram[0]]) and len(remoteAddr) == 2 :
                     self._wrDgramFiFo.Put( (datagram, remoteAddr) )
+                    self._onDataSent    = onDataSent
+                    self._onDataSentArg = onDataSentArg
                     self._asyncSocketsPool.NotifyNextReadyForWriting(self, True)
                     return True
             except :
@@ -848,11 +837,11 @@ class XAsyncUDPDatagram(XAsyncSocket) :
             return ('0.0.0.0', 0)
 
     @property
-    def OnRecv(self) :
-        return self._onRecv
-    @OnRecv.setter
-    def OnRecv(self, value) :
-        self._onRecv = value
+    def OnDataRecv(self) :
+        return self._onDataRecv
+    @OnDataRecv.setter
+    def OnDataRecv(self, value) :
+        self._onDataRecv = value
 
     @property
     def OnFailsToSend(self) :
@@ -860,13 +849,6 @@ class XAsyncUDPDatagram(XAsyncSocket) :
     @OnFailsToSend.setter
     def OnFailsToSend(self, value) :
         self._onFailsToSend = value
-
-    @property
-    def OnCanSend(self) :
-        return self._onCanSend
-    @OnCanSend.setter
-    def OnCanSend(self, value) :
-        self._onCanSend = value
 
 # ============================================================================
 # ===( XBufferSlot )==========================================================

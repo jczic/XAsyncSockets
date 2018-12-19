@@ -6,18 +6,18 @@
 - `"XAsyncSockets.py"`
 
 #### XAsyncSockets features :
-- Managed asynchronous sockets (in pool)
-- Works directly with I/O
-- Supports very large number of simultaneous pending connections
-- Supports concurrent synchronous processing operations if necessary (threaded)
-- Implementation of TCP server
-- Implementation of TCP client
-- Implementation of UDP datagrams sender/receiver
+- Managed asynchronous sockets in a pool (up to thousands!)
+- Works directly with I/O to receive and send very quickly
+- Supports very large number of simultaneous TCP connections
+- Supports concurrent synchronous processing operations if necessary (pooled)
+- Implementation of TCP servers
+- Implementation of TCP clients
+- Implementation of UDP datagrams (sender and/or receiver)
 - TCP client can event after a specified size of data or a text line received
-- Each connections and receivings can pending during a specified time.
+- Each connections and receivings can waiting during a specified time
 - The reasons of TCP client closures are returned
 - Really robust, very fast and easy to use
-- Compatible with MicroPython implementation (sockets layer, FiFo queue, perf counter).
+- Compatible with MicroPython implementation (sockets layer, FiFo queue, perf counter)
 
 ### *XAsyncSockets* classes :
 
@@ -95,11 +95,13 @@
 | Method | Arguments |
 | - | - |
 | Create (static) | `asyncSocketsPool`, `srvAddr`, `connectTimeout=5`(int), `recvbufLen=4096`(int) |
-| AsyncRecvLine | `timeoutSec=None` (int) |
-| AsyncRecvData | `size=None` (int), `timeoutSec=None` (int) |
-| AsyncSendData | `data` (bytes or buffer protocol) |
-| StartSSL* | `keyfile=None`, `certfile=None`, `server_side=False`, `cert_reqs=ssl.CERT_NONE`, `ca_certs=None` |
-* StartSSL doesn't works on MycroPython (in asynchronous non-blocking sockets mode)
+| AsyncRecvLine | `onDataRecv=None` (function), `onDataRecvArg=None`(object)`, timeoutSec=None` (int) |
+| AsyncRecvData | `size=None` (int), `onDataRecv=None` (function), `onDataRecvArg=None`(object), `timeoutSec=None` (int) |
+| AsyncSendData | `data` (bytes or buffer protocol), `onDataSent=None` (function), `onDataSentArg=None` (object) |
+| StartSSL | `keyfile=None`, `certfile=None`, `server_side=False`, `cert_reqs=ssl.CERT_NONE`, `ca_certs=None` |
+- `onDataRecv` is a callback event of type f(xAsyncTCPClient, arg)
+- `onDataSent` is a callback event of type f(xAsyncUDPDatagram, arg)
+- `StartSSL` doesn't works on MycroPython (in asynchronous non-blocking sockets mode)
 
 | Property | Details |
 | - | - |
@@ -107,23 +109,20 @@
 | CliAddr | Tuple of ip and port |
 | OnFailsToConnect | Get or set an event of type f(xAsyncTCPClient) |
 | OnConnected | Get or set an event of type f(xAsyncTCPClient) |
-| OnLineRecv | Get or set an event of type f(xAsyncTCPClient, line) |
-| OnDataRecv | Get or set an event of type f(xAsyncTCPClient, data) |
-| OnCanSend | Get or set an event of type f(xAsyncTCPClient) |
 
 ### *XAsyncUDPDatagram* class details :
 
 | Method | Arguments |
 | - | - |
 | Create (static) | `asyncSocketsPool`, `localAddr=None` (tuple of ip and port), `recvbufLen=4096`(int), `broadcast=False`(bool) |
-| AsyncSendDatagram | `datagram` (bytes or buffer protocol), `remoteAddr` (tuple of ip and port) |
+| AsyncSendDatagram | `datagram` (bytes or buffer protocol), `remoteAddr` (tuple of ip and port), `onDataSent=None` (function), `onDataSentArg=None` (object) |
+- onDataSent is a callback event of type f(xAsyncUDPDatagram, arg)
 
 | Property | Details |
 | - | - |
 | LocalAddr | Tuple of ip and port |
 | OnRecv | Get or set an event of type f(xAsyncUDPDatagram, remoteAddr, datagram) |
 | OnFailsToSend | Get or set an event of type f(xAsyncUDPDatagram, datagram, remoteAddr) |
-| OnCanSend | Get or set an event of type f(xAsyncUDPDatagram) |
 
 ### *XBufferSlot* class details :
 

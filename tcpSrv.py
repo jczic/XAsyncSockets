@@ -6,28 +6,20 @@ def _onTCPSrvClientAccepted(xAsyncTCPServer, xAsyncTCPClient) :
     global countAccepted
     countAccepted += 1
     print('%s) On TCP Server Client Accepted' % countAccepted)
-    xAsyncTCPClient.OnLineRecv = _onTCPClientLineRecv
-    xAsyncTCPClient.OnDataRecv = _onTCPClientDataRecv
-    xAsyncTCPClient.OnCanSend  = _onTCPClientCanSend
-    xAsyncTCPClient.OnClosed   = _onTCPClientClosed
-    xAsyncTCPClient.AsyncRecvData(timeoutSec=1)
+    xAsyncTCPClient.OnClosed = _onTCPClientClosed
+    xAsyncTCPClient.AsyncRecvData( onDataRecv    = _onTCPClientDataRecv,
+                                   onDataRecvArg = 'test',
+                                   timeoutSec    = 1 )
 
 def _onTCPSrvClosed(xAsyncTCPServer, closedReason) :
     print("On TCP Server Closed")
 
-def _onTCPClientLineRecv(xAsyncTCPClient, line) :
-    print("On TCP Client Line Recv : %s" % line)
-    xAsyncTCPClient.AsyncRecvLine(timeoutSec=2)
-
-def _onTCPClientDataRecv(xAsyncTCPClient, data) :
+def _onTCPClientDataRecv(xAsyncTCPClient, data, arg) :
     global countRecv
     countRecv += 1
     print( "%s) On TCP Client Data Recv (%s bytes) : %s" \
            % (countRecv, len(data), data.tobytes()) )
-    xAsyncTCPClient.AsyncRecvData(timeoutSec=2)
-
-def _onTCPClientCanSend(xAsyncTCPClient) :
-    print("On TCP Client Can Send")
+    xAsyncTCPClient.AsyncRecvData(onDataRecv=_onTCPClientDataRecv, timeoutSec=2)
 
 def _onTCPClientClosed(xAsyncTCPClient, closedReason) :
     global countClosed
