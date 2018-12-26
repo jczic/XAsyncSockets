@@ -497,66 +497,75 @@ class XAsyncTCPClient(XAsyncSocket) :
     # ------------------------------------------------------------------------
 
     def OnReadyForReading(self) :
-        if self._rdLinePos is not None :
-            # In the context of reading a line,
-            while True :
+        while True :
+            if self._rdLinePos is not None :
+                # In the context of reading a line,
+                while True :
+                    try :
+                        b = self._socket.recv(1)
+                    except ssl.SSLError as sslErr :
+                        if sslErr.args[0] != ssl.SSL_ERROR_WANT_READ :
+                            self._close()
+                        return
+                    except :
+                        self._close()
+                        return
+                    if b :
+                        if b == b'\n' :
+                            lineLen = self._rdLinePos 
+                            self._rdLinePos = None
+                            self._asyncSocketsPool.NotifyNextReadyForReading(self, False)
+                            self._removeExpireTimeout()
+                            if self._onDataRecv :
+                                line = self._bufSlot.Buffer[:lineLen]
+                                try :
+                                    line = line.decode()
+                                except :
+                                    pass
+                                try :
+                                    self._onDataRecv(self, line, self._onDataRecvArg)
+                                except Exception as ex :
+                                    raise XAsyncTCPClientException('Error when handling the "OnDataRecv" event : %s' % ex)
+                            break
+                        elif b != b'\r' :
+                            if self._rdLinePos < self._bufSlot.Size :
+                                self._bufSlot.Buffer[self._rdLinePos] = ord(b)
+                                self._rdLinePos += 1
+                            else :
+                                self._close()
+                                return
+                    else :
+                        self._close(XClosedReason.ClosedByPeer)
+                        return
+            elif self._rdBufView :
+                # In the context of reading data,
                 try :
-                    b = self._socket.recv(1)
+                    n = self._socket.recv_into(self._rdBufView)
+                except ssl.SSLError as sslErr :
+                    if sslErr.args[0] != ssl.SSL_ERROR_WANT_READ :
+                        self._close()
+                    return
                 except :
-                    break
-                if b :
-                    if b == b'\n' :
-                        lineLen = self._rdLinePos 
-                        self._rdLinePos = None
+                    self._close()
+                    return
+                self._rdBufView = self._rdBufView[n:]
+                if n > 0 :
+                    if not self._sizeToRead or not self._rdBufView :
+                        self._rdBufView = None
                         self._asyncSocketsPool.NotifyNextReadyForReading(self, False)
                         self._removeExpireTimeout()
                         if self._onDataRecv :
-                            line = self._bufSlot.Buffer[:lineLen]
+                            size = self._sizeToRead if self._sizeToRead else n
+                            data = memoryview(self._bufSlot.Buffer)[:size]
                             try :
-                                line = line.decode()
-                            except :
-                                pass
-                            try :
-                                self._onDataRecv(self, line, self._onDataRecvArg)
+                                self._onDataRecv(self, data, self._onDataRecvArg)
                             except Exception as ex :
                                 raise XAsyncTCPClientException('Error when handling the "OnDataRecv" event : %s' % ex)
-                        break
-                    elif b != b'\r' :
-                        if self._rdLinePos < self._bufSlot.Size :
-                            self._bufSlot.Buffer[self._rdLinePos] = ord(b)
-                            self._rdLinePos += 1
-                        else :
-                            self._close()
-                            break
                 else :
                     self._close(XClosedReason.ClosedByPeer)
-                    break
-        else :
-            # In the context of reading data,
-            try :
-                n = self._socket.recv_into(self._rdBufView)
-            except ssl.SSLError as sslErr :
-                if sslErr.args[0] != ssl.SSL_ERROR_WANT_READ :
-                    self._close()
-                return
-            except :
-                self._close()
-                return
-            self._rdBufView = self._rdBufView[n:]
-            if n > 0 :
-                if not self._sizeToRead or not self._rdBufView :
-                    self._rdBufView = None
-                    self._asyncSocketsPool.NotifyNextReadyForReading(self, False)
-                    self._removeExpireTimeout()
-                    if self._onDataRecv :
-                        size = self._sizeToRead if self._sizeToRead else n
-                        data = memoryview(self._bufSlot.Buffer)[:size]
-                        try :
-                            self._onDataRecv(self, data, self._onDataRecvArg)
-                        except Exception as ex :
-                            raise XAsyncTCPClientException('Error when handling the "OnDataRecv" event : %s' % ex)
+                    return
             else :
-                self._close(XClosedReason.ClosedByPeer)
+                return
 
     # ------------------------------------------------------------------------
 

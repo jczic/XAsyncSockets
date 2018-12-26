@@ -12,7 +12,6 @@ xAsyncUDPDatagram = XAsyncSockets.XAsyncUDPDatagram. \
                     Create(xAsyncSocketsPool)
 if xAsyncUDPDatagram :
 	xAsyncUDPDatagram.OnFailsToSend = _onUDPDatagramFailsToSend
-	xAsyncUDPDatagram.OnDataSent    = _onUDPDatagramDataSent
 	xAsyncUDPDatagram.AsyncSendDatagram( datagram      = b'START',
 		                                 remoteAddr    = ('127.0.0.1', 12345),
 		                                 onDataSent    = _onUDPDatagramDataSent,
