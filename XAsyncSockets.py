@@ -507,6 +507,10 @@ class XAsyncTCPClient(XAsyncSocket) :
                         if sslErr.args[0] != ssl.SSL_ERROR_WANT_READ :
                             self._close()
                         return
+                    except BlockingIOError as bioErr :
+                        if bioErr.errno != 35 :
+                            self._close()
+                        return
                     except :
                         self._close()
                         return
@@ -543,6 +547,10 @@ class XAsyncTCPClient(XAsyncSocket) :
                     n = self._socket.recv_into(self._rdBufView)
                 except ssl.SSLError as sslErr :
                     if sslErr.args[0] != ssl.SSL_ERROR_WANT_READ :
+                        self._close()
+                    return
+                except BlockingIOError as bioErr :
+                    if bioErr.errno != 35 :
                         self._close()
                     return
                 except :
