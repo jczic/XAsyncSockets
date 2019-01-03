@@ -94,9 +94,9 @@
 
 | Method | Arguments |
 | - | - |
-| Create (static) | `asyncSocketsPool`, `srvAddr`, `connectTimeout=5`(int), `recvbufLen=4096`(int) |
-| AsyncRecvLine | `onDataRecv=None` (function), `onDataRecvArg=None`(object)`, timeoutSec=None` (int) |
-| AsyncRecvData | `size=None` (int), `onDataRecv=None` (function), `onDataRecvArg=None`(object), `timeoutSec=None` (int) |
+| Create (static) | `asyncSocketsPool`, `srvAddr`, `connectTimeout=5` (int), `recvbufLen=4096` (int) | `connectAsync=True` (bool) |
+| AsyncRecvLine | `onDataRecv=None` (function), `onDataRecvArg=None` (object)`, timeoutSec=None` (int) |
+| AsyncRecvData | `size=None` (int), `onDataRecv=None` (function), `onDataRecvArg=None` (object), `timeoutSec=None` (int) |
 | AsyncSendData | `data` (bytes or buffer protocol), `onDataSent=None` (function), `onDataSentArg=None` (object) |
 | StartSSL | `keyfile=None`, `certfile=None`, `server_side=False`, `cert_reqs=ssl.CERT_NONE`, `ca_certs=None` |
 - `onDataRecv` is a callback event of type f(xAsyncTCPClient, data, arg)
@@ -114,7 +114,7 @@
 
 | Method | Arguments |
 | - | - |
-| Create (static) | `asyncSocketsPool`, `localAddr=None` (tuple of ip and port), `recvbufLen=4096`(int), `broadcast=False`(bool) |
+| Create (static) | `asyncSocketsPool`, `localAddr=None` (tuple of ip and port), `recvbufLen=4096` (int), `broadcast=False` (bool) |
 | AsyncSendDatagram | `datagram` (bytes or buffer protocol), `remoteAddr` (tuple of ip and port), `onDataSent=None` (function), `onDataSentArg=None` (object) |
 - onDataSent is a callback event of type f(xAsyncUDPDatagram, arg)
 
@@ -128,7 +128,7 @@
 
 | Method | Arguments |
 | - | - |
-| Constructor | `size` (int), `keepAlloc=True`(bool) |
+| Constructor | `size` (int), `keepAlloc=True` (bool) |
 
 | Property | Details |
 | - | - |
@@ -140,7 +140,7 @@
 
 | Method | Arguments |
 | - | - |
-| Constructor | `slotsCount`(int), `slotsSize`(int), `keepAlloc=True`(bool) |
+| Constructor | `slotsCount` (int), `slotsSize` (int), `keepAlloc=True` (bool) |
 | GetAvailableSlot | None |
 
 | Property | Details |

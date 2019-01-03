@@ -422,7 +422,7 @@ class XAsyncTCPClientException(Exception) :
 class XAsyncTCPClient(XAsyncSocket) :
 
     @staticmethod
-    def Create(asyncSocketsPool, srvAddr, connectTimeout=5, recvbufLen=4096) :
+    def Create(asyncSocketsPool, srvAddr, connectTimeout=5, recvbufLen=4096, connectAsync=True) :
         try :
             size    = max(256, int(recvbufLen))
             bufSlot = XBufferSlot(size=size, keepAlloc=False)
@@ -439,7 +439,7 @@ class XAsyncTCPClient(XAsyncSocket) :
                                        bufSlot )
         ok = False
         try :
-            if hasattr(cliSocket, "connect_ex") :
+            if connectAsync and hasattr(cliSocket, "connect_ex") :
                 errno = cliSocket.connect_ex(srvAddr)
                 if errno == 0 or errno == 36 :
                     asyncTCPCli._setExpireTimeout(connectTimeout)
