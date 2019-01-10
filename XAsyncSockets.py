@@ -502,15 +502,19 @@ class XAsyncTCPClient(XAsyncSocket) :
                 # In the context of reading a line,
                 while True :
                     try :
-                        b = self._socket.recv(1)
-                    except ssl.SSLError as sslErr :
-                        if sslErr.args[0] != ssl.SSL_ERROR_WANT_READ :
+                        try :
+                            b = self._socket.recv(1)
+                        except ssl.SSLError as sslErr :
+                            if sslErr.args[0] != ssl.SSL_ERROR_WANT_READ :
+                                self._close()
+                            return
+                        except BlockingIOError as bioErr :
+                            if bioErr.errno != 35 :
+                                self._close()
+                            return
+                        except :
                             self._close()
-                        return
-                    except BlockingIOError as bioErr :
-                        if bioErr.errno != 35 :
-                            self._close()
-                        return
+                            return
                     except :
                         self._close()
                         return
@@ -522,10 +526,13 @@ class XAsyncTCPClient(XAsyncSocket) :
                             self._removeExpireTimeout()
                             if self._onDataRecv :
                                 line = self._bufSlot.Buffer[:lineLen]
-                                try :
-                                    line = line.decode()
-                                except :
-                                    pass
+                                if line :
+                                    try :
+                                        line = bytes(line).decode()
+                                    except :
+                                        line = None
+                                else :
+                                    line = ''
                                 try :
                                     self._onDataRecv(self, line, self._onDataRecvArg)
                                 except Exception as ex :
@@ -544,20 +551,27 @@ class XAsyncTCPClient(XAsyncSocket) :
             elif self._rdBufView :
                 # In the context of reading data,
                 try :
-                    n = self._socket.recv_into(self._rdBufView)
-                except ssl.SSLError as sslErr :
-                    if sslErr.args[0] != ssl.SSL_ERROR_WANT_READ :
+                    try :
+                        n = self._socket.recv_into(self._rdBufView)
+                    except ssl.SSLError as sslErr :
+                        if sslErr.args[0] != ssl.SSL_ERROR_WANT_READ :
+                            self._close()
+                        return
+                    except BlockingIOError as bioErr :
+                        if bioErr.errno != 35 :
+                            self._close()
+                        return
+                    except :
                         self._close()
-                    return
-                except BlockingIOError as bioErr :
-                    if bioErr.errno != 35 :
-                        self._close()
-                    return
+                        return
                 except :
-                    self._close()
-                    return
+                    try :
+                        n = self._socket.readinto(self._rdBufView)
+                    except :
+                        self._close()
+                        return
                 self._rdBufView = self._rdBufView[n:]
-                if n > 0 :
+                if n :
                     if not self._sizeToRead or not self._rdBufView :
                         self._rdBufView = None
                         self._asyncSocketsPool.NotifyNextReadyForReading(self, False)
@@ -659,7 +673,7 @@ class XAsyncTCPClient(XAsyncSocket) :
             try :
                 if bytes([data[0]]) :
                     if self._wrBufView :
-                        self._wrBufView = memoryview(self._wrBufView.tobytes() + data)
+                        self._wrBufView = memoryview(bytes(self._wrBufView) + data)
                     else :
                         self._wrBufView = memoryview(data)
                     self._onDataSent    = onDataSent
@@ -789,14 +803,11 @@ class XAsyncUDPDatagram(XAsyncSocket) :
             n, remoteAddr = self._socket.recvfrom_into(self._bufSlot.Buffer)
             datagram      = memoryview(self._bufSlot.Buffer)[:n]
         except :
-            if hasattr(self._socket, "recvfrom_into") :
+            try :
+                buf, remoteAddr = self._socket.recvfrom(self._bufSlot.Size)
+                datagram        = memoryview(buf)
+            except :
                 return
-            else :
-                try :
-                    buf, remoteAddr = self._socket.recvfrom(self._bufSlot.Size)
-                    datagram        = memoryview(buf)
-                except :
-                    return
         if self._onDataRecv :
             try :
                 self._onDataRecv(self, remoteAddr, datagram)
