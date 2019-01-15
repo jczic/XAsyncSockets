@@ -19,6 +19,10 @@
 - Really robust, very fast and easy to use
 - Compatible with MicroPython implementation (sockets layer, FiFo queue, perf counter)
 
+<p align="center">
+    <img src="diagram.png">
+</p>
+
 ### *XAsyncSockets* classes :
 
 | Class name | Description |
