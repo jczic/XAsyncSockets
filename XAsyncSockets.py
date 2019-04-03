@@ -439,26 +439,17 @@ class XAsyncTCPClient(XAsyncSocket) :
                                        bufSlot )
         ok = False
         try :
-            if connectAsync and hasattr(cliSocket, 'connect_ex') :
+            if connectAsync and hasattr(cliSocket, "connect_ex") :
                 errno = cliSocket.connect_ex(srvAddr)
                 if errno == 0 or errno == 36 :
                     asyncTCPCli._setExpireTimeout(connectTimeout)
                     ok = True
             else :
-                srvAddr = socket.getaddrinfo(srvAddr[0], srvAddr[1])[0][-1]
-                if connectAsync :
-                    asyncTCPCli._setExpireTimeout(connectTimeout)
-                else :
-                    cliSocket.settimeout(connectTimeout)
-                    cliSocket.setblocking(1)
-                try :
-                    cliSocket.connect(srvAddr)
-                except OSError as ex :
-                    if not connectAsync or str(ex) != '119' :
-                        raise ex
-                if not connectAsync :
-                    cliSocket.settimeout(0)
-                    cliSocket.setblocking(0)
+                cliSocket.settimeout(connectTimeout)
+                cliSocket.setblocking(1)
+                cliSocket.connect(srvAddr)
+                cliSocket.settimeout(0)
+                cliSocket.setblocking(0)
                 ok = True
         except :
             pass
@@ -716,16 +707,16 @@ class XAsyncTCPClient(XAsyncSocket) :
             except Exception as ex :
                 raise XAsyncTCPClientException('StartSSL : %s' % ex)
             count = 0
-            while count < 5 :
+            while count < 10 :
                 try :
                     self._socket.do_handshake()
                     return True
                 except ssl.SSLError as sslErr :
                     count += 1
                     if sslErr.args[0] == ssl.SSL_ERROR_WANT_READ :
-                        select([self._socket], [], [], 0.500)
+                        select([self._socket], [], [], 1)
                     elif sslErr.args[0] == ssl.SSL_ERROR_WANT_WRITE :
-                        select([], [self._socket], [], 0.500)
+                        select([], [self._socket], [], 1)
                     else :
                         break
                 except :
