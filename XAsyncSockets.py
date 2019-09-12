@@ -1,6 +1,6 @@
 """
 The MIT License (MIT)
-Copyright © 2018 Jean-Christophe Bos & HC² (www.hc2.fr)
+Copyright © 2019 Jean-Christophe Bos & HC² (www.hc2.fr)
 """
 
 
@@ -447,11 +447,8 @@ class XAsyncTCPClient(XAsyncSocket) :
             else :
                 srvAddr = socket.getaddrinfo(srvAddr[0], srvAddr[1])[0][-1]
                 if connectAsync :
-                    cliSocket.connect(srvAddr)
                     asyncTCPCli._setExpireTimeout(connectTimeout)
-                    cliSocket.settimeout(0)
                 else :
-                    cliSocket.setblocking(0)
                     cliSocket.settimeout(connectTimeout)
                     cliSocket.setblocking(1)
                 try :
