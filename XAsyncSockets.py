@@ -702,35 +702,35 @@ class XAsyncTCPClient(XAsyncSocket) :
                   server_side = False,
                   cert_reqs   = ssl.CERT_NONE,
                   ca_certs    = None ) :
-        if hasattr(ssl, 'SSLContext') :
+        if not hasattr(ssl, 'SSLContext') :
+            raise XAsyncTCPClientException('SSL is not properly supported')
+        try :
+            self._asyncSocketsPool.NotifyNextReadyForWriting(self, False)
+            self._asyncSocketsPool.NotifyNextReadyForReading(self, False)
+            self._socket = ssl.wrap_socket( self._socket,
+                                            keyfile     = keyfile,
+                                            certfile    = certfile,
+                                            server_side = server_side,
+                                            cert_reqs   = cert_reqs,
+                                            ca_certs    = ca_certs,
+                                            do_handshake_on_connect = False )
+        except Exception as ex :
+            raise XAsyncTCPClientException('StartSSL : %s' % ex)
+        count = 0
+        while count < 10 :
             try :
-                self._asyncSocketsPool.NotifyNextReadyForWriting(self, False)
-                self._asyncSocketsPool.NotifyNextReadyForReading(self, False)
-                self._socket = ssl.wrap_socket( self._socket,
-                                                keyfile     = keyfile,
-                                                certfile    = certfile,
-                                                server_side = server_side,
-                                                cert_reqs   = cert_reqs,
-                                                ca_certs    = ca_certs,
-                                                do_handshake_on_connect = False )
+                self._socket.do_handshake()
+                break
+            except ssl.SSLError as sslErr :
+                count += 1
+                if sslErr.args[0] == ssl.SSL_ERROR_WANT_READ :
+                    select([self._socket], [], [], 1)
+                elif sslErr.args[0] == ssl.SSL_ERROR_WANT_WRITE :
+                    select([], [self._socket], [], 1)
+                else :
+                    raise XAsyncTCPClientException('SSL handshake #1 : %s' % sslErr)
             except Exception as ex :
-                raise XAsyncTCPClientException('StartSSL : %s' % ex)
-            count = 0
-            while count < 10 :
-                try :
-                    self._socket.do_handshake()
-                    return True
-                except ssl.SSLError as sslErr :
-                    count += 1
-                    if sslErr.args[0] == ssl.SSL_ERROR_WANT_READ :
-                        select([self._socket], [], [], 1)
-                    elif sslErr.args[0] == ssl.SSL_ERROR_WANT_WRITE :
-                        select([], [self._socket], [], 1)
-                    else :
-                        break
-                except :
-                    break
-        return False
+                raise XAsyncTCPClientException('SSL handshake #2 : %s' % ex)
 
     # ------------------------------------------------------------------------
 
