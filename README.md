@@ -9,7 +9,7 @@
 - Managed asynchronous sockets in a pool (up to thousands!)
 - Works directly with I/O to receive and send very quickly
 - Supports very large number of simultaneous TCP connections
-- Supports concurrent synchronous processing operations if necessary (pooled)
+- Supports concurrent synchronous processing operations if necessary (threaded)
 - Implementation of TCP servers
 - Implementation of TCP clients
 - Implementation of UDP datagrams (sender and/or receiver)
