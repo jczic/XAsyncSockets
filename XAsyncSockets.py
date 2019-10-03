@@ -623,7 +623,6 @@ class XAsyncTCPClient(XAsyncSocket) :
             try :
                 n = self._socket.send(self._wrBufView)
             except :
-                self._close()
                 return
             self._wrBufView = self._wrBufView[n:]
             if self._wrBufView :
