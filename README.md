@@ -113,6 +113,7 @@
 | - | - |
 | SrvAddr | Tuple of ip and port |
 | CliAddr | Tuple of ip and port |
+| IsSSL | Return True if SSL is used |
 | OnFailsToConnect | Get or set an event of type f(xAsyncTCPClient) |
 | OnConnected | Get or set an event of type f(xAsyncTCPClient) |
 

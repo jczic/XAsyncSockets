@@ -765,6 +765,10 @@ class XAsyncTCPClient(XAsyncSocket) :
         return self._cliAddr
 
     @property
+    def IsSSL(self) :
+        return isinstance(self._socket, ssl.SSLSocket)
+
+    @property
     def OnFailsToConnect(self) :
         return self._onFailsToConnect
     @OnFailsToConnect.setter
