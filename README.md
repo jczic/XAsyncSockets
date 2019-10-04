@@ -105,6 +105,7 @@
 | AsyncSendSendingBuffer | `size=None` (int), `onDataSent=None` (function), `onDataSentArg=None` (object) |
 | StartSSL | `keyfile=None`, `certfile=None`, `server_side=False`, `cert_reqs=ssl.CERT_NONE`, `ca_certs=None` |
 | StartSSLContext | `sslContext`, `serverSide=False` |
+- `onLineRecv` is a callback event of type f(xAsyncTCPClient, line, arg)
 - `onDataRecv` is a callback event of type f(xAsyncTCPClient, data, arg)
 - `onDataSent` is a callback event of type f(xAsyncTCPClient, arg)
 - `StartSSL` and `StartSSLContext` doesn't works on MicroPython (in asynchronous non-blocking sockets mode)
