@@ -500,8 +500,9 @@ class XAsyncTCPClient(XAsyncSocket) :
             self._onDataRecvArg    = None
             self._onDataSent       = None
             self._onDataSentArg    = None
-            self._sizeToRead       = None
+            self._sizeToRecv       = None
             self._rdLinePos        = None
+            self._rdLineEncoding   = None
             self._rdBufView        = None
             self._wrBufView        = None
             self._socketOpened     = (cliAddr is not None)
@@ -554,17 +555,16 @@ class XAsyncTCPClient(XAsyncSocket) :
                             self._removeExpireTimeout()
                             if self._onDataRecv :
                                 line = self._recvBufSlot.Buffer[:lineLen]
-                                if line :
-                                    try :
-                                        line = bytes(line).decode()
-                                    except :
-                                        line = None
-                                else :
-                                    line = ''
+                                try :
+                                    line = bytes(line).decode(self._rdLineEncoding)
+                                except :
+                                    line = None
                                 try :
                                     self._onDataRecv(self, line, self._onDataRecvArg)
                                 except Exception as ex :
                                     raise XAsyncTCPClientException('Error when handling the "OnDataRecv" event : %s' % ex)
+                            else :
+                                return
                             break
                         elif b != b'\r' :
                             if self._rdLinePos < self._recvBufSlot.Size :
@@ -576,11 +576,12 @@ class XAsyncTCPClient(XAsyncSocket) :
                     else :
                         self._close(XClosedReason.ClosedByPeer)
                         return
-            elif self._rdBufView :
+            elif self._sizeToRecv :
                 # In the context of reading data,
+                recvBuf = self._rdBufView[-self._sizeToRecv:]
                 try :
                     try :
-                        n = self._socket.recv_into(self._rdBufView)
+                        n = self._socket.recv_into(recvBuf)
                     except ssl.SSLError as sslErr :
                         if sslErr.args[0] != ssl.SSL_ERROR_WANT_READ :
                             self._close()
@@ -594,26 +595,26 @@ class XAsyncTCPClient(XAsyncSocket) :
                         return
                 except :
                     try :
-                        n = self._socket.readinto(self._rdBufView)
+                        n = self._socket.readinto(recvBuf)
                     except :
                         self._close()
                         return
-                self._rdBufView = self._rdBufView[n:]
-                if n :
-                    if not self._sizeToRead or not self._rdBufView :
-                        self._rdBufView = None
-                        self._asyncSocketsPool.NotifyNextReadyForReading(self, False)
-                        self._removeExpireTimeout()
-                        if self._onDataRecv :
-                            size = self._sizeToRead if self._sizeToRead else n
-                            data = memoryview(self._recvBufSlot.Buffer)[:size]
-                            try :
-                                self._onDataRecv(self, data, self._onDataRecvArg)
-                            except Exception as ex :
-                                raise XAsyncTCPClientException('Error when handling the "OnDataRecv" event : %s' % ex)
-                else :
+                if not n :
                     self._close(XClosedReason.ClosedByPeer)
                     return
+                self._sizeToRecv -= n
+                if not self._sizeToRecv :
+                    data = self._rdBufView
+                    self._rdBufView = None
+                    self._asyncSocketsPool.NotifyNextReadyForReading(self, False)
+                    self._removeExpireTimeout()
+                    if self._onDataRecv :
+                        try :
+                            self._onDataRecv(self, data, self._onDataRecvArg)
+                        except Exception as ex :
+                            raise XAsyncTCPClientException('Error when handling the "OnDataRecv" event : %s' % ex)
+                    else :
+                        return
             else :
                 return
 
@@ -654,14 +655,15 @@ class XAsyncTCPClient(XAsyncSocket) :
 
     # ------------------------------------------------------------------------
 
-    def AsyncRecvLine(self, onDataRecv=None, onDataRecvArg=None, timeoutSec=None) :
-        if self._rdLinePos is not None or self._rdBufView :
+    def AsyncRecvLine(self, lineEncoding='UTF-8', onLineRecv=None, onLineRecvArg=None, timeoutSec=None) :
+        if self._rdLinePos is not None or self._sizeToRecv :
             raise XAsyncTCPClientException('AsyncRecvLine : Already waiting asynchronous receive.')
         if self._socket :
             self._setExpireTimeout(timeoutSec)
-            self._rdLinePos     = 0
-            self._onDataRecv    = onDataRecv
-            self._onDataRecvArg = onDataRecvArg
+            self._rdLinePos      = 0
+            self._rdLineEncoding = lineEncoding
+            self._onDataRecv     = onLineRecv
+            self._onDataRecvArg  = onLineRecvArg
             self._asyncSocketsPool.NotifyNextReadyForReading(self, True)
             return True
         return False
@@ -669,23 +671,22 @@ class XAsyncTCPClient(XAsyncSocket) :
     # ------------------------------------------------------------------------
 
     def AsyncRecvData(self, size=None, onDataRecv=None, onDataRecvArg=None, timeoutSec=None) :
-        if self._rdLinePos is not None or self._rdBufView :
+        if self._rdLinePos is not None or self._sizeToRecv :
             raise XAsyncTCPClientException('AsyncRecvData : Already waiting asynchronous receive.')
         if self._socket :
-            if size :
-                try :
-                    size = int(size)
-                except :
-                    raise XAsyncTCPClientException('AsyncRecvData : "size" is incorrect.')
-            if not size or size < 0 :
-                self._sizeToRead = None
-                size             = self._recvBufSlot.Size
-            elif size > self._recvBufSlot.Size :
-                raise XAsyncTCPClientException('AsyncRecvData : "size" must be less or equal to buffer size.')
+            if size is None :
+                size = self._recvBufSlot.Size
+            elif not isinstance(size, int) or size <= 0 :
+                raise XAsyncTCPClientException('AsyncRecvData : "size" is incorrect.')
+            if size <= self._recvBufSlot.Size :
+                self._rdBufView = memoryview(self._recvBufSlot.Buffer)[:size]
             else :
-                self._sizeToRead = size
+                try :
+                    self._rdBufView = memoryview(bytearray(size))
+                except :
+                    raise XAsyncTCPClientException('AsyncRecvData : No enought memory to receive %s bytes.' % size)
             self._setExpireTimeout(timeoutSec)
-            self._rdBufView     = memoryview(self._recvBufSlot.Buffer)[:size]
+            self._sizeToRecv    = size
             self._onDataRecv    = onDataRecv
             self._onDataRecvArg = onDataRecvArg
             self._asyncSocketsPool.NotifyNextReadyForReading(self, True)
