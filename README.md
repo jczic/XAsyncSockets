@@ -114,8 +114,8 @@
 | - | - |
 | SrvAddr | Tuple of ip and port |
 | CliAddr | Tuple of ip and port |
-| IsSSL | Return True if SSL is used |
-| SendingBuffer | Return the existing buffer used to send data |
+| IsSSL | Return `True` if SSL is used |
+| SendingBuffer | Get the existing buffer (memoryview) used to send data |
 | OnFailsToConnect | Get or set an event of type f(xAsyncTCPClient) |
 | OnConnected | Get or set an event of type f(xAsyncTCPClient) |
 
@@ -169,7 +169,7 @@
 
 | Property | Details |
 | - | - |
-| Empty | Return True if the FiFo is empty |
+| Empty | Return `True` if the FiFo is empty |
 
 ### By JC`zic for [HC²](https://www.hc2.fr) ;')
 
