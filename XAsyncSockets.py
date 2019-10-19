@@ -804,7 +804,8 @@ class XAsyncTCPClient(XAsyncSocket) :
 
     @property
     def IsSSL(self) :
-        return isinstance(self._socket, ssl.SSLSocket)
+        return ( hasattr(ssl, 'SSLContext') and \
+                 isinstance(self._socket, ssl.SSLSocket) )
 
     @property
     def SendingBuffer(self) :
