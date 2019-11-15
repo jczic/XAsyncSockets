@@ -58,6 +58,10 @@
 | AsyncWaitEvents | `threadsCount=0` (int) |
 | StopWaitEvents | None |
 
+| Property | Details |
+| - | - |
+| WaitEventsProcessing | Return `True` if "WaitEvents" is in processing |
+
 ( Do not call directly the methods `AddAsyncSocket`, `RemoveAsyncSocket`, `NotifyNextReadyForReading` and `NotifyNextReadyForWriting` )
 
 ### *XClosedReason* class details :
