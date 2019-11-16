@@ -91,7 +91,7 @@
 
 | Method | Arguments |
 | - | - |
-| Create (static) | `asyncSocketsPool`, `srvAddr` (tuple of ip and port), `srvBacklog=256` (int), `recvBufSlots=None` |
+| Create (static) | `asyncSocketsPool`, `srvAddr` (tuple of ip and port), `srvBacklog=256` (int), `bufSlots=None` |
 
 | Property | Details |
 | - | - |
