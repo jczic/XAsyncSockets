@@ -102,7 +102,7 @@
 
 | Method | Arguments |
 | - | - |
-| Create (static) | `asyncSocketsPool`, `srvAddr`, `connectTimeout=5` (int), `recvbufLen=4096` (int) | `connectAsync=True` (bool) |
+| Create (static) | `asyncSocketsPool`, `srvAddr` (tuple of ip and port), `connectTimeout=5` (int), `recvBufLen=4096` (int), `sendBufLen=4096`(int), `connectAsync=True` (bool) |
 | AsyncRecvLine | `lineEncoding='UTF-8'`, `onLineRecv=None` (function), `onLineRecvArg=None` (object)`, timeoutSec=None` (int) |
 | AsyncRecvData | `size=None` (int), `onDataRecv=None` (function), `onDataRecvArg=None` (object), `timeoutSec=None` (int) |
 | AsyncSendData | `data` (bytes or buffer protocol), `onDataSent=None` (function), `onDataSentArg=None` (object) |
@@ -128,7 +128,7 @@
 
 | Method | Arguments |
 | - | - |
-| Create (static) | `asyncSocketsPool`, `localAddr=None` (tuple of ip and port), `recvbufLen=4096` (int), `broadcast=False` (bool) |
+| Create (static) | `asyncSocketsPool`, `localAddr=None` (tuple of ip and port), `recvBufLen=4096` (int), `broadcast=False` (bool) |
 | AsyncSendDatagram | `datagram` (bytes or buffer protocol), `remoteAddr` (tuple of ip and port), `onDataSent=None` (function), `onDataSentArg=None` (object) |
 - onDataSent is a callback event of type f(xAsyncUDPDatagram, arg)
 
