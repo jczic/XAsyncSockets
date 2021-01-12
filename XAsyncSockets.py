@@ -53,7 +53,7 @@ class XAsyncSocketsPool :
 
     def _addSocket(self, socket, asyncSocket) :
         if socket :
-            socketno = socket.fileno()
+            socketno = id(socket)
             self._opLock.acquire()
             ok = (socketno not in self._asyncSockets)
             if ok :
@@ -66,7 +66,7 @@ class XAsyncSocketsPool :
 
     def _removeSocket(self, socket) :
         if socket :
-            socketno = socket.fileno()
+            socketno = id(socket)
             self._opLock.acquire()
             ok = (socketno in self._asyncSockets)
             if ok :
@@ -83,7 +83,7 @@ class XAsyncSocketsPool :
 
     def _socketListAdd(self, socket, socketsList) :
         self._opLock.acquire()
-        ok = (socket.fileno() in self._asyncSockets and socket not in socketsList)
+        ok = (id(socket) in self._asyncSockets and socket not in socketsList)
         if ok :
             socketsList.append(socket)
         self._opLock.release()
@@ -93,7 +93,7 @@ class XAsyncSocketsPool :
 
     def _socketListRemove(self, socket, socketsList) :
         self._opLock.acquire()
-        ok = (socket.fileno() in self._asyncSockets and socket in socketsList)
+        ok = (id(socket) in self._asyncSockets and socket in socketsList)
         if ok :
             socketsList.remove(socket)
         self._opLock.release()
@@ -113,13 +113,15 @@ class XAsyncSocketsPool :
                                          self._writeList,
                                          self._readList,
                                          self._CHECK_SEC_INTERVAL )
+                except KeyboardInterrupt as ex :
+                    raise ex
                 except :
                     continue
                 if not self._processing :
                     break
                 for socketsList in ex, wr, rd :
                     for socket in socketsList :
-                        asyncSocket = self._asyncSockets.get(socket.fileno(), None)
+                        asyncSocket = self._asyncSockets.get(id(socket), None)
                         if asyncSocket and self._socketListAdd(socket, self._handlingList) :
                             if socketsList is ex :
                                 asyncSocket.OnExceptionalCondition()
@@ -136,7 +138,7 @@ class XAsyncSocketsPool :
                            timeSec > asyncSocket.ExpireTimeSec :
                             asyncSocket._close(XClosedReason.Timeout)
             except KeyboardInterrupt :
-                break
+                self._processing = False
         self._decThreadsCount()
 
     # ------------------------------------------------------------------------
@@ -201,7 +203,10 @@ class XAsyncSocketsPool :
             try :
                 for i in range(threadsCount) :
                     start_new_thread(self._processWaitEvents, ())
+                while self._processing and self._threadsCount < threadsCount :
+                    sleep(0.001)
             except :
+                self._processing = False
                 raise XAsyncSocketsPoolException('AsyncWaitEvents : Fatal error to create new threads...')
         else :
             self._processWaitEvents()
@@ -212,6 +217,12 @@ class XAsyncSocketsPool :
         self._processing = False
         while self._threadsCount :
             sleep(0.001)
+
+    # ------------------------------------------------------------------------
+
+    @property
+    def WaitEventsProcessing(self) :
+        return (self._threadsCount > 0)
 
 # ============================================================================
 # ===( XClosedReason )========================================================
@@ -324,7 +335,7 @@ class XAsyncSocket :
 
     @property
     def SocketID(self) :
-        return self._socket.fileno() if self._socket else None
+        return id(self._socket) if self._socket else None
 
     @property
     def ExpireTimeSec(self) :
@@ -716,6 +727,7 @@ class XAsyncTCPClient(XAsyncSocket) :
                     self._onDataSent    = onDataSent
                     self._onDataSentArg = onDataSentArg
                     self._asyncSocketsPool.NotifyNextReadyForWriting(self, True)
+                    self.OnReadyForWriting()
                     return True
             except :
                 pass
